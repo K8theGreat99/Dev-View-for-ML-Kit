@@ -1,0 +1,75 @@
+name: Build APK
+
+on:
+  push:
+    branches: ["**"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Read version metadata
+        id: version
+        run: |
+          VERSION_NAME=$(grep -oP 'versionName\s*=\s*"\K[^"]+' app/build.gradle.kts)
+          VERSION_CODE=$(grep -oP 'versionCode\s*=\s*\K\d+' app/build.gradle.kts)
+          echo "name=$VERSION_NAME" >> "$GITHUB_OUTPUT"
+          echo "code=$VERSION_CODE" >> "$GITHUB_OUTPUT"
+          # Filesystem-safe slug for the APK filename, e.g. "Ada 2.1" -> "ada-2.1"
+          echo "slug=$(echo "$VERSION_NAME" | tr '[:upper:] ' '[:lower:]-')" >> "$GITHUB_OUTPUT"
+
+      # Debug build on purpose: it is signed with the standard debug keystore, so it
+      # installs on a phone without any signing secrets. A release build would be
+      # unsigned and refuse to install.
+      - name: Build debug APK
+        run: ./gradlew :app:assembleDebug -PbuildNumber=${{ github.run_number }} --no-daemon
+
+      - name: Name the APK
+        id: apk
+        run: |
+          APK="dev-view-${{ steps.version.outputs.slug }}-build${{ github.run_number }}.apk"
+          mv app/build/outputs/apk/debug/app-debug.apk "$APK"
+          echo "path=$APK" >> "$GITHUB_OUTPUT"
+
+      - name: Upload APK as a workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.apk.outputs.path }}
+          path: ${{ steps.apk.outputs.path }}
+          if-no-files-found: error
+
+      # Also publish a Release, because a release asset is a direct download link that
+      # works in a phone browser. Workflow artifacts are zipped and require a login.
+      - name: Publish a downloadable release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: "${{ steps.version.outputs.name }} — build ${{ github.run_number }}"
+          body: |
+            **versionName:** ${{ steps.version.outputs.name }}
+            **versionCode:** ${{ steps.version.outputs.code }}
+            **buildNumber:** ${{ github.run_number }}
+            **branch:** `${{ github.ref_name }}`
+            **commit:** ${{ github.sha }}
+
+            Download the `.apk` below and open it on your phone to install.
+          files: ${{ steps.apk.outputs.path }}
+          prerelease: true
+          make_latest: true

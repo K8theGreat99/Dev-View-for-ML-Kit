@@ -1,0 +1,17 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Text lines being read -->
+    <path android:fillColor="#A9CDDE" android:pathData="M40,48h28v4h-28z" />
+    <path android:fillColor="#A9CDDE" android:pathData="M40,56h28v4h-28z" />
+    <path android:fillColor="#7FA8B8" android:pathData="M40,64h18v4h-18z" />
+
+    <!-- Viewfinder corners -->
+    <path android:fillColor="#FDFCFF" android:pathData="M34,38h12v4h-8v8h-4z" />
+    <path android:fillColor="#FDFCFF" android:pathData="M74,38v12h-4v-8h-8v-4z" />
+    <path android:fillColor="#FDFCFF" android:pathData="M34,78v-12h4v8h8v4z" />
+    <path android:fillColor="#FDFCFF" android:pathData="M74,78h-12v-4h8v-8h4z" />
+</vector>
