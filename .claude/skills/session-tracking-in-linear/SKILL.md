@@ -7,7 +7,11 @@ description: Track Claude Code coding sessions as Linear issues in the K8theGrea
 
 Session tracking lives entirely in Linear issues.
 
-**Workspace:** K8theGreat · **Team:** K8theGreat (`K8T-`) · **Project:** one per repository (e.g. `Dev View`)
+**Workspace:** K8theGreat · **Team:** K8theGreat (`K8T-`) · **Project:** one per repository
+
+> This skill is repo-agnostic. Anything specific to a single app — the version-name
+> theme, the emoji convention, the naming rules — lives in that repo's `CLAUDE.md`.
+> Read `CLAUDE.md` first, then apply the mechanics below.
 
 ---
 
@@ -26,7 +30,7 @@ Every issue, **including sub-issues**, opens its description with this block. It
 branch: claude/branch-name-goes-here-efmznn
 issueId: K8T-123
 versionCode: 027
-versionName: Grilled Cheese 
+versionName: Example Name
 buildNumber: 70
 issueOverview: {Answer the question "what is this coding session about?" Ideally 1-3 sentences.}
 ---
@@ -41,11 +45,14 @@ issueOverview: {Answer the question "what is this coding session about?" Ideally
 ## Title format
 
 ```
-{versionCode}. {short description} | {food emoji} {versionName}
+{versionCode}. {short description} | {emoji} {versionName}
 ```
 
-Example: `30. Fix export crash on Android 13 | 🥙 Doner Kebab 4`
+Example: `30. Fix export crash on Android 13 | 🔬 Example Name 4`
 
+* `{emoji}` follows the repo's emoji convention — see that repo's `CLAUDE.md`. Never
+  assume a theme carried over from another project.
+* `{versionName}` follows the repo's naming theme — also in `CLAUDE.md`.
 * Titles can run long — the project issue list view shows up to three lines.
 
 ---
@@ -57,17 +64,23 @@ Example: `30. Fix export crash on Android 13 | 🥙 Doner Kebab 4`
 Fetch the five most recently created issues in the current repo's project:
 
 ```
-list_issues(project: "{repo name}", orderBy: "createdAt", limit: 5,
+list_issues(project: "{project name}", orderBy: "createdAt", limit: 5,
             fields: ["id","title","description","status"])
 ```
 
 Read the `versionCode` out of each pseudo-YAML block. The highest number is the current versionCode. Make sure the next versionCode you create is higher.
 
+**Scope every lookup to the current repo's project.** versionCode, versionName, and
+buildNumber counters are per-project. Issues in other projects are unrelated and must
+be ignored, even when they sit at the top of a workspace-wide list.
+
+If the project has no issues yet, this is session one: start `versionCode` at `001`.
+
 Check the status of each issue returned. If any are "in progress" consult with the user for guidance to avoid conflicts.
 
 If the user states a version code explicitly — which they will do when more than one branch is active — theirs wins.
 
-Choose a new `versionName` for the session based on project guidelines.
+Choose a new `versionName` for the session based on the repo's naming theme in `CLAUDE.md`.
 
 **2. Create the root issue.**
 
@@ -111,7 +124,7 @@ Read `issueId` out of the root issue's pseudo-YAML block and out of every sub-is
 
 ```
 Fixes K8T-120, K8T-121, K8T-122
-Session 27 — Doner Kebab. Export crash fix plus two follow-up builds.
+Session 27 — Example Name. Export crash fix plus two follow-up builds.
 ```
 
 The magic word must come before the IDs, and Linear only acts on it once the commit lands on main. Any of `fixes` / `closes` / `resolves` works.
@@ -121,3 +134,5 @@ The magic word must come before the IDs, and Linear only acts on it once the com
 ## Notes
 
 * Use comments as you see fit.
+* A Linear document copy of this skill may exist in the workspace. **This repo file is
+  the authoritative version**; treat the Linear document as a draft.
