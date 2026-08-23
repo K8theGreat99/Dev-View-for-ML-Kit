@@ -1,6 +1,6 @@
 ---
 name: session-tracking-in-linear
-description: Track Claude Code coding sessions as Linear issues in the K8theGreat workspace — root issue per branch, sub-issue per build, with a pseudo-YAML header carrying branch, versionCode, versionName, and buildNumber. Use this skill whenever a coding session starts, a new build is produced, a branch merges to main, or the user mentions version codes, version names, build numbers, session logs, or tracking work in Linear — even if they don't name this skill explicitly.
+description: Track Claude Code coding sessions as Linear issues in the K8theGreat workspace — root issue per branch, sub-issue per build, with a YAML header carrying branch, versionCode, versionName, and buildNumber. Use this skill whenever a coding session starts, a new build is produced, a branch merges to main, or the user mentions version codes, version names, build numbers, session logs, or tracking work in Linear — even if they don't name this skill explicitly.
 ---
 
 # Session Tracking in Linear
@@ -21,20 +21,38 @@ Session tracking lives entirely in Linear issues.
 * **Every additional build in that same session = one sub-issue** of the root issue.
 * Everything is **In Progress** until the branch merges to main, then **Done**. Changing status to Done can happen automatically on merge to main if you use a magic word in your commit message.
 
-## The pseudo-YAML block — authoritative
+## What is worth tracking
+
+Tracking exists to record what steps were taken in which session. It is not an audit
+trail, and it is not that deep. Use judgment:
+
+* **App code changed** → sub-issue. This is the main case.
+* **A build with no app-code change** (CI config, workflow tweak) → no sub-issue. Let
+  `buildNumber` climb on its own.
+* **A major documentation change** — an overhaul, a rewritten skill, a new convention
+  → worth an issue or sub-issue even though no app code moved.
+* **A typo or a small doc fix** → not worth tracking.
+
+When a case is genuinely borderline, ask the user rather than inventing a rule.
+
+## The YAML block — authoritative
 
 Every issue, **including sub-issues**, opens its description with this block. It is the source of truth. The title is a display copy derived from it.
 
-```
----
+Use a fenced `yaml` code block, **not** `---` delimiters. Linear's editor rewrites a
+`---` fence into a code block anyway, and a bare `---` is also Markdown for a
+horizontal rule, so the fence is both what Linear stores and what renders correctly.
+
+````
+```yaml
 branch: claude/branch-name-goes-here-efmznn
 issueId: K8T-123
 versionCode: 027
 versionName: Example Name
 buildNumber: 70
 issueOverview: {Answer the question "what is this coding session about?" Ideally 1-3 sentences.}
----
 ```
+````
 
 * `versionCode` is zero-padded to three digits in the YAML, but not in the title.
 * `branch` is the real GitHub branch name for the session.
@@ -68,7 +86,7 @@ list_issues(project: "{project name}", orderBy: "createdAt", limit: 5,
             fields: ["id","title","description","status"])
 ```
 
-Read the `versionCode` out of each pseudo-YAML block. The highest number is the current versionCode. Make sure the next versionCode you create is higher.
+Read the `versionCode` out of each YAML block. The highest number is the current versionCode. Make sure the next versionCode you create is higher.
 
 **Scope every lookup to the current repo's project.** versionCode, versionName, and
 buildNumber counters are per-project. Issues in other projects are unrelated and must
@@ -85,7 +103,7 @@ Choose a new `versionName` for the session based on the repo's naming theme in `
 **2. Create the root issue.**
 
 * Title per the format above
-* Description: pseudo-YAML block, then the log skeleton below
+* Description: YAML block, then the log skeleton below
 * Priority: **High** (2)
 * Status: **In Progress**
 * Project: the repo's project
@@ -93,7 +111,6 @@ Choose a new `versionName` for the session based on the repo's naming theme in `
 Linear returns the issueID in the create response — grab it now and put it in the yaml.
 
 ```
----
 ## Log notes
 **What I worked on**
 **Learnings**
@@ -112,7 +129,7 @@ Create a **sub-issue** of the root issue:
 * Title: per the format above
 * Priority: **No priority** (0)
 * Status: **In Progress**
-* Description: its own pseudo-YAML block — same `branch`, new `versionCode`, suffixed `versionName`, new `buildNumber`, and its own `issueId` filled in from the create response the same way as the root issue
+* Description: its own YAML block — same `branch`, new `versionCode`, suffixed `versionName`, new `buildNumber`, and its own `issueId` filled in from the create response the same way as the root issue
 
 ---
 
@@ -120,7 +137,7 @@ Create a **sub-issue** of the root issue:
 
 The branch is pushed to main (fast-forward, no PR), so nothing closes on its own — the final commit message has to do it.
 
-Read `issueId` out of the root issue's pseudo-YAML block and out of every sub-issue's block, then list them all after a closing magic word in the final commit message:
+Read `issueId` out of the root issue's YAML block and out of every sub-issue's block, then list them all after a closing magic word in the final commit message:
 
 ```
 Fixes K8T-120, K8T-121, K8T-122
