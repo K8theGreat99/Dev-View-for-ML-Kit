@@ -12,6 +12,24 @@ Pay close attention to whether I ask for a build or ask for recommendations/plan
 
 At the beginning of each session, use the session-tracking-in-linear skill. 
 
+# Git workflow
+
+Solo repo — no pull requests. There is no team to review, so a PR would only mean
+approving my own work.
+
+- One context window = one working branch = one focused issue (or a group of small
+  related ones). Keeping context windows short saves tokens and keeps output quality
+  up.
+- Push to the working branch continuously. **Never push to main without an explicit
+  go-ahead from the user.**
+- When the go-ahead comes, I do the merge — fast-forward, no PR, no merge commit.
+  Only one branch is active at a time, so main should never have commits the working
+  branch lacks.
+- The user gets to a sensible stopping point, tests the build on their phone, and may
+  ask for tweaks before giving the go-ahead.
+- The final commit that lands on main carries the Linear closing keyword and issue
+  IDs (see the session-tracking skill).
+
 # versionName, versionCode, and build numbers 
 
 When you invoke the session tracking skill, you'll be guided to fetch the latest version codes & names from our tracker. Pay attention to the status of the latest sessions. Any sessions that are "in progress" have not yet been merged to main.
@@ -31,7 +49,9 @@ name is a person whose work deserves more recognition than it gets. First name o
 surname, whichever reads better.
 
 Used so far:
-- **A** — (see chat; being decided)
+- **A** — Ada, for Ada Lovelace, who wrote the first published algorithm intended
+  for a machine and saw that such a machine could manipulate symbols, not just
+  numbers — a leap Babbage himself did not make.
 - **B** — Barbara, for Barbara McClintock, geneticist who discovered transposons and
   was proven right after decades of being dismissed.
 
