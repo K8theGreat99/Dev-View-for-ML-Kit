@@ -17,8 +17,8 @@ Session tracking lives entirely in Linear issues.
 
 ## The model
 
-* **One Claude Code context window = one working branch = one root issue.**
-* **Every additional build in that same session = one sub-issue** of the root issue.
+* **One Claude Code context window = one working branch = one root Linear issue.**
+* **Additional changes to the codebase in that same session = one sub-issue** of the root issue.
 * Everything is **In Progress** until the branch merges to main, then **Done**. Changing status to Done can happen automatically on merge to main if you use a magic word in your commit message.
 
 ## What is worth tracking
@@ -34,6 +34,8 @@ trail, and it is not that deep. Use judgment:
 * **A typo or a small doc fix** → not worth tracking.
 
 When a case is genuinely borderline, ask the user rather than inventing a rule.
+
+The only crucial aspect of session tracking is the versionCode. We always need a new entry (either issue or sub-issue) when there's a new versionCode.
 
 ## The YAML block — authoritative
 
@@ -85,16 +87,16 @@ Fetch the five most recently created issues in the current repo's project:
 list_issues(project: "{project name}", orderBy: "createdAt", limit: 5,
             fields: ["id","title","description","status"])
 ```
+//Update note: this search query template needs to be updated to also find only issues of the issue type session. this is accomplished by searching for items with a session label. but before this can become effective, we need to check all of this project's session tracking issues and apply the session label to them if it is not present.
 
 Read the `versionCode` out of each YAML block. The highest number is the current versionCode. Make sure the next versionCode you create is higher.
 
 **Scope every lookup to the current repo's project.** versionCode, versionName, and
-buildNumber counters are per-project. Issues in other projects are unrelated and must
-be ignored, even when they sit at the top of a workspace-wide list.
+buildNumber counters are per-project. Issues in other projects are unrelated.
 
-If the project has no issues yet, this is session one: start `versionCode` at `001`.
+If the project has no session issues yet, this is session one: start `versionCode` at `001`.
 
-Check the status of each issue returned. If any are "in progress" consult with the user for guidance to avoid conflicts.
+Check the status of each session-type issue returned. If any are "in progress" consult with the user for guidance to avoid conflicts.
 
 If the user states a version code explicitly — which they will do when more than one branch is active — theirs wins.
 
@@ -107,6 +109,7 @@ Choose a new `versionName` for the session based on the repo's naming theme in `
 * Priority: **High** (2)
 * Status: **In Progress**
 * Project: the repo's project
+* Label: session
 
 Linear returns the issueID in the create response — grab it now and put it in the yaml.
 
@@ -121,7 +124,7 @@ The log notes area goes below the yaml and belongs to the user. Set up the skele
 
 ---
 
-## During the session — each additional build
+## During the session — each additional build with a change to the codebase
 
 Create a **sub-issue** of the root issue:
 
@@ -130,6 +133,8 @@ Create a **sub-issue** of the root issue:
 * Priority: **No priority** (0)
 * Status: **In Progress**
 * Description: its own YAML block — same `branch`, new `versionCode`, suffixed `versionName`, new `buildNumber`, and its own `issueId` filled in from the create response the same way as the root issue
+
+Remember, you do not have to create a sub-issue for insignificant changes.
 
 ---
 
