@@ -2,6 +2,8 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.ksp)
 }
 
 // Supplied by CI as -PbuildNumber=${{ github.run_number }}; 0 for local builds.
@@ -17,8 +19,13 @@ android {
         targetSdk = 34
 
         // Keep these in sync with the Linear session-tracking issue.
-        versionCode = 1
-        versionName = "Ada"
+        versionCode = 2
+        versionName = "Ada 2"
+
+        // ML Kit ships its OCR pipeline as a ~11 MB native library per architecture.
+        // Shipping all four puts ~39 MB in the APK of which a given phone uses one.
+        // Every 64-bit Android device runs arm64-v8a; x86 and x86_64 are emulators.
+        ndk { abiFilters += listOf("arm64-v8a") }
 
         buildConfigField("String", "BUILD_NUMBER", "\"$buildNumber\"")
         buildConfigField(
@@ -65,6 +72,19 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+    implementation(libs.androidx.material.icons.extended)
+    implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.lifecycle.runtime.compose)
+
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
+
+    implementation(libs.mlkit.text.recognition)
+    implementation(libs.coil.compose)
+    implementation(libs.androidx.exifinterface)
+    implementation(libs.kotlinx.serialization.json)
 
     debugImplementation(libs.androidx.ui.tooling)
 }
