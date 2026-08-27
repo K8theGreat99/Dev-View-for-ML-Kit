@@ -98,6 +98,27 @@ Comments appear as labeled sections tied to node IDs.
 **Batch export matters most.** Ten samples of the same layout in one document, with a
 batch-level note, is the artifact that answers "is this reliable across samples?"
 
+### Debug builds are signed with a stable, secret-backed key
+
+A CI runner is a fresh machine with no debug keystore, so Gradle mints a new one on
+every run. Each APK then carries a different signing certificate and Android refuses to
+install it over the previous build — a changed certificate is how it detects an
+impostor app. See `docs/Android-Signing-Certificate.md`.
+
+CI restores a shared debug keystore from the `DEBUG_KEYSTORE_B64` repository secret.
+The keystore is never committed, and `.gitignore` excludes `*.keystore`.
+
+**Committing the keystore is not an option, even though it is only a debug key.** This
+repository is public and its releases are public. Anyone with the key could sign an APK
+that an installed copy of Dev View would accept as a legitimate update. The developer
+would not be fooled, because they know where real builds come from — but anyone else
+who installed the app would have no way to tell a forged update from a real one. The
+signing key is what makes that distinction possible, so it stays out of source control.
+
+If the secret is missing, the build still succeeds using Gradle's generated key and
+logs a warning. That keeps a fresh clone buildable; it just produces an APK that will
+not install over builds signed with the shared key.
+
 ### Coordinate scaling
 
 If an image is downscaled before OCR or display, bounding boxes must be scaled to
