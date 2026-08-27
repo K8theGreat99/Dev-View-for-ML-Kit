@@ -35,9 +35,23 @@ jobs:
           # Filesystem-safe slug for the APK filename, e.g. "Ada 2.1" -> "ada-2.1"
           echo "slug=$(echo "$VERSION_NAME" | tr '[:upper:] ' '[:lower:]-')" >> "$GITHUB_OUTPUT"
 
-      # Debug build on purpose: it is signed with the standard debug keystore, so it
-      # installs on a phone without any signing secrets. A release build would be
-      # unsigned and refuse to install.
+      # Restore the shared debug keystore so every build carries the same signing
+      # certificate. A CI runner is a fresh machine, so without this Gradle mints a new
+      # debug key each run and Android rejects the install as a certificate change.
+      - name: Restore the shared debug keystore
+        env:
+          DEBUG_KEYSTORE_B64: ${{ secrets.DEBUG_KEYSTORE_B64 }}
+        run: |
+          if [ -n "$DEBUG_KEYSTORE_B64" ]; then
+            printf '%s' "$DEBUG_KEYSTORE_B64" | base64 -d > app/debug.keystore
+            echo "Restored the shared debug keystore."
+          else
+            echo "::warning::DEBUG_KEYSTORE_B64 is not set. This APK gets a throwaway signing key and will NOT install over an existing build."
+          fi
+
+      # Debug build on purpose: it is signed with a debug keystore, so it installs on a
+      # phone without any release signing secrets. A release build would be unsigned and
+      # refuse to install.
       - name: Build debug APK
         run: ./gradlew :app:assembleDebug -PbuildNumber=${{ github.run_number }} --no-daemon
 
@@ -47,6 +61,17 @@ jobs:
           APK="dev-view-${{ steps.version.outputs.slug }}-build${{ github.run_number }}.apk"
           mv app/build/outputs/apk/debug/app-debug.apk "$APK"
           echo "path=$APK" >> "$GITHUB_OUTPUT"
+
+      # Print the certificate so a mismatch is visible in the log rather than only as a
+      # failed install on the phone. Consecutive builds must report the same digest.
+      - name: Report the signing certificate
+        id: cert
+        run: |
+          APKSIGNER=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | tail -1)
+          DIGEST=$("$APKSIGNER" verify --print-certs "${{ steps.apk.outputs.path }}" \
+            | grep -m1 "SHA-256 digest" | awk '{print $NF}')
+          echo "Signing certificate SHA-256: $DIGEST"
+          echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
 
       - name: Upload APK as a workflow artifact
         uses: actions/upload-artifact@v4
@@ -68,6 +93,7 @@ jobs:
             **buildNumber:** ${{ github.run_number }}
             **branch:** `${{ github.ref_name }}`
             **commit:** ${{ github.sha }}
+            **signing cert SHA-256:** `${{ steps.cert.outputs.digest }}`
 
             Download the `.apk` below and open it on your phone to install.
           files: ${{ steps.apk.outputs.path }}
